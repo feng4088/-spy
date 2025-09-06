@@ -754,4 +754,1325 @@ function mouseEntered()
     customCursor.Image = ""
     customCursor.Parent = SimpleSpy3
     UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
-    RunService:BindToRender
+    RunService:BindToRenderStep("SIMPLESPY_CURSOR", 1, function()
+        if mouseInGui and getgenv().SimpleSpyExecuted then
+            local mouseLocation = UserInputService:GetMouseLocation() - Vector2.new(0, 36)
+            customCursor.Position = UDim2.fromOffset(mouseLocation.X - customCursor.AbsoluteSize.X / 2, mouseLocation.Y - customCursor.AbsoluteSize.Y / 2)
+            local inRange, type = isInResizeRange(mouseLocation)
+            if inRange and not sideClosed and not closed then
+                customCursor.Image = type == 'B' and "rbxassetid://6065821980" or type == 'X' and "rbxassetid://6065821086" or type == 'Y' and "rbxassetid://6065821596"
+            elseif inRange and not closed and type == 'Y' or type == 'B' then
+                customCursor.Image = "rbxassetid://6065821596"
+            elseif customCursor.Image ~= "rbxassetid://6065775281" then
+                customCursor.Image = "rbxassetid://6065775281"
+            end
+        else
+            UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+            customCursor:Destroy()
+            RunService:UnbindFromRenderStep("SIMPLESPY_CURSOR")
+        end
+    end)
+end
+
+--- 当鼠标移动时调用
+function mouseMoved()
+    local mousePos = UserInputService:GetMouseLocation() - Vector2.new(0, 36)
+    if not closed
+    and mousePos.X >= TopBar.AbsolutePosition.X and mousePos.X <= TopBar.AbsolutePosition.X + TopBar.AbsoluteSize.X
+    and mousePos.Y >= Background.AbsolutePosition.Y and mousePos.Y <= Background.AbsolutePosition.Y + Background.AbsoluteSize.Y then
+        if not mouseInGui then
+            mouseInGui = true
+            mouseEntered()
+        end
+    else
+        mouseInGui = false
+    end
+end
+
+--- 将 UI 元素调整为“最大化”大小
+function maximizeSize(speed)
+    if not speed then
+        speed = 0.05
+    end
+    TweenService:Create(LeftPanel, TweenInfo.new(speed), { Size = UDim2.fromOffset(LeftPanel.AbsoluteSize.X, Background.AbsoluteSize.Y - TopBar.AbsoluteSize.Y) }):Play()
+    TweenService:Create(RightPanel, TweenInfo.new(speed), { Size = UDim2.fromOffset(Background.AbsoluteSize.X - LeftPanel.AbsoluteSize.X, Background.AbsoluteSize.Y - TopBar.AbsoluteSize.Y) }):Play()
+    TweenService:Create(TopBar, TweenInfo.new(speed), { Size = UDim2.fromOffset(Background.AbsoluteSize.X, TopBar.AbsoluteSize.Y) }):Play()
+    TweenService:Create(ScrollingFrame, TweenInfo.new(speed), { Size = UDim2.fromOffset(Background.AbsoluteSize.X - LeftPanel.AbsoluteSize.X, 110), Position = UDim2.fromOffset(0, Background.AbsoluteSize.Y - 119 - TopBar.AbsoluteSize.Y) }):Play()
+    TweenService:Create(CodeBox, TweenInfo.new(speed), { Size = UDim2.fromOffset(Background.AbsoluteSize.X - LeftPanel.AbsoluteSize.X, Background.AbsoluteSize.Y - 119 - TopBar.AbsoluteSize.Y) }):Play()
+    TweenService:Create(LogList, TweenInfo.new(speed), { Size = UDim2.fromOffset(LogList.AbsoluteSize.X, Background.AbsoluteSize.Y - TopBar.AbsoluteSize.Y - 18) }):Play()
+end
+
+--- 调整 UI 元素以关闭侧边栏
+function minimizeSize(speed)
+    if not speed then
+        speed = 0.05
+    end
+    TweenService:Create(LeftPanel, TweenInfo.new(speed), { Size = UDim2.fromOffset(LeftPanel.AbsoluteSize.X, Background.AbsoluteSize.Y - TopBar.AbsoluteSize.Y) }):Play()
+    TweenService:Create(RightPanel, TweenInfo.new(speed), { Size = UDim2.fromOffset(0, Background.AbsoluteSize.Y - TopBar.AbsoluteSize.Y) }):Play()
+    TweenService:Create(TopBar, TweenInfo.new(speed), { Size = UDim2.fromOffset(LeftPanel.AbsoluteSize.X, TopBar.AbsoluteSize.Y) }):Play()
+    TweenService:Create(ScrollingFrame, TweenInfo.new(speed), { Size = UDim2.fromOffset(0, 119), Position = UDim2.fromOffset(0, Background.AbsoluteSize.Y - 119 - TopBar.AbsoluteSize.Y) }):Play()
+    TweenService:Create(CodeBox, TweenInfo.new(speed), { Size = UDim2.fromOffset(0, Background.AbsoluteSize.Y - 119 - TopBar.AbsoluteSize.Y) }):Play()
+    TweenService:Create(LogList, TweenInfo.new(speed), { Size = UDim2.fromOffset(LogList.AbsoluteSize.X, Background.AbsoluteSize.Y - TopBar.AbsoluteSize.Y - 18) }):Play()
+end
+
+--- 确保大小在屏幕大小限制内
+function validateSize()
+    local x, y = Background.AbsoluteSize.X, Background.AbsoluteSize.Y
+    local screenSize = workspace.CurrentCamera.ViewportSize
+    if x + Background.AbsolutePosition.X > screenSize.X then
+        if screenSize.X - Background.AbsolutePosition.X >= 450 then
+            x = screenSize.X - Background.AbsolutePosition.X
+        else
+            x = 450
+        end
+    elseif y + Background.AbsolutePosition.Y > screenSize.Y then
+        if screenSize.X - Background.AbsolutePosition.Y >= 268 then
+            y = screenSize.Y - Background.AbsolutePosition.Y
+        else
+            y = 268
+        end
+    end
+    Background.Size = UDim2.fromOffset(x, y)
+end
+
+--- 当鼠标在“Background”框架内时用户输入时调用
+--- @param input InputObject
+function backgroundUserInput(input)
+    local mousePos = UserInputService:GetMouseLocation() - Vector2.new(0, 36)
+    local inResizeRange, type = isInResizeRange(mousePos)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and inResizeRange then
+        local lastPos = UserInputService:GetMouseLocation()
+        local offset = Background.AbsoluteSize - lastPos
+        local currentPos = lastPos + offset
+        RunService:BindToRenderStep("SIMPLESPY_RESIZE", 1, function()
+            local newPos = UserInputService:GetMouseLocation()
+            if newPos ~= lastPos then
+                local currentX = (newPos + offset).X
+                local currentY = (newPos + offset).Y
+                if currentX < 450 then
+                    currentX = 450
+                end
+                if currentY < 268 then
+                    currentY = 268
+                end
+                currentPos = Vector2.new(currentX, currentY)
+                Background.Size = UDim2.fromOffset((not sideClosed and not closed and (type == "X" or type == "B")) and currentPos.X or Background.AbsoluteSize.X, (--[[(not sideClosed or currentPos.X <= LeftPanel.AbsolutePosition.X + LeftPanel.AbsoluteSize.X) and]] not closed and (type == "Y" or type == "B")) and currentPos.Y or Background.AbsoluteSize.Y)
+                validateSize()
+                if sideClosed then
+                    minimizeSize()
+                else
+                    maximizeSize()
+                end
+                lastPos = newPos
+            end
+        end)
+        table.insert(connections, UserInputService.InputEnded:Connect(function(inputE)
+            if input == inputE then
+                RunService:UnbindFromRenderStep("SIMPLESPY_RESIZE")
+            end
+        end))
+    elseif isInDragRange(mousePos) then
+        onBarInput(input)
+    end
+end
+
+--- 获取实例所属的玩家
+function getPlayerFromInstance(instance)
+    for _, v in next, Players:GetPlayers() do
+        if v.Character and (instance:IsDescendantOf(v.Character) or instance == v.Character) then
+            return v
+        end
+    end
+end
+
+--- 在事件框架的 MouseButton1Click 上运行
+function eventSelect(frame)
+    if selected and selected.Log  then
+        task.spawn(function()
+            TweenService:Create(selected.Log.Button, TweenInfo.new(0.5), {BackgroundColor3 = Color3.fromRGB(0, 0, 0)}):Play()
+        end)
+        selected = nil
+    end
+    for _, v in next, logs do
+        if frame == v.Log then
+            selected = v
+        end
+    end
+    if selected and selected.Log then
+        task.spawn(function()
+            TweenService:Create(frame.Button, TweenInfo.new(0.5), {BackgroundColor3 = Color3.fromRGB(92, 126, 229)}):Play()
+        end)
+        codebox:setRaw(selected.GenScript)
+    end
+    if sideClosed then
+        toggleSideTray()
+    end
+end
+
+--- 更新画布大小以适应当前功能按钮的数量
+function updateFunctionCanvas()
+    ScrollingFrame.CanvasSize = UDim2.fromOffset(UIGridLayout.AbsoluteContentSize.X, UIGridLayout.AbsoluteContentSize.Y)
+end
+
+--- 更新画布大小以适应当前远程事件的数量
+function updateRemoteCanvas()
+    LogList.CanvasSize = UDim2.fromOffset(UIListLayout.AbsoluteContentSize.X, UIListLayout.AbsoluteContentSize.Y)
+end
+
+--- 允许切换工具提示并轻松设置描述
+--- @param enable boolean
+--- @param text string
+function makeToolTip(enable, text)
+    if enable then
+        if ToolTip.Visible then
+            ToolTip.Visible = false
+            RunService:UnbindFromRenderStep("ToolTip")
+        end
+        local first = true
+        RunService:BindToRenderStep("ToolTip", 1, function()
+            local topLeft = Vector2.new(Mouse.X + 20, Mouse.Y + 20)
+            local bottomRight = topLeft + ToolTip.AbsoluteSize
+            if topLeft.X < 0 then
+                topLeft = Vector2.new(0, topLeft.Y)
+            elseif bottomRight.X > workspace.CurrentCamera.ViewportSize.X then
+                topLeft = Vector2.new(workspace.CurrentCamera.ViewportSize.X - ToolTip.AbsoluteSize.X, topLeft.Y)
+            end
+            if topLeft.Y < 0 then
+                topLeft = Vector2.new(topLeft.X, 0)
+            elseif bottomRight.Y > workspace.CurrentCamera.ViewportSize.Y - 35 then
+                topLeft = Vector2.new(topLeft.X, workspace.CurrentCamera.ViewportSize.Y - ToolTip.AbsoluteSize.Y - 35)
+            end
+            if topLeft.X <= Mouse.X and topLeft.Y <= Mouse.Y then
+                topLeft = Vector2.new(Mouse.X - ToolTip.AbsoluteSize.X - 2, Mouse.Y - ToolTip.AbsoluteSize.Y - 2)
+            end
+            if first then
+                ToolTip.Position = UDim2.fromOffset(topLeft.X, topLeft.Y)
+                first = false
+            else
+                ToolTip:TweenPosition(UDim2.fromOffset(topLeft.X, topLeft.Y), "Out", "Linear", 0.1)
+            end
+        end)
+        TextLabel.Text = text
+        TextLabel.TextScaled = true
+        ToolTip.Visible = true
+        return
+    else
+        if ToolTip.Visible then
+            ToolTip.Visible = false
+            RunService:UnbindFromRenderStep("ToolTip")
+        end
+    end
+end
+
+--- 创建新的功能按钮 (在代码框下方)
+--- @param name string
+---@param description function
+---@param onClick function
+function newButton(name, description, onClick)
+    local button = FunctionTemplate:Clone()
+    local btnButton = button:WaitForChild("Button")
+    button.Text.Text = name
+    btnButton.MouseEnter:Connect(function()
+        makeToolTip(true, description())
+    end)
+    btnButton.MouseLeave:Connect(function()
+        makeToolTip(false)
+    end)
+    button.AncestryChanged:Connect(function()
+        makeToolTip(false)
+    end)
+    button.Button.MouseButton1Click:Connect(function(...)
+        onClick(button, ...)
+    end)
+    button.Parent = ScrollingFrame
+    updateFunctionCanvas()
+end
+
+--- 添加新的远程事件到日志
+--- @param name string 正在记录的远程事件的名称
+--- @param type string 正在记录的远程事件的类型 ('function' 或 'event')
+--- @param args any
+--- @param remote any
+--- @param function_info string
+--- @param blocked any
+function newRemote(type, name, args, remote, function_info, blocked, src)
+    local RemoteTemplate = Create("Frame",{Name = "RemoteTemplate",Parent = LogList,BackgroundColor3 = Color3.new(1, 1, 1),BackgroundTransparency = 1,Size = UDim2.new(0, 117, 0, 27)})
+    local ColorBar = Create("Frame",{Name = "ColorBar",Parent = RemoteTemplate,BackgroundColor3 = (type == "event" and Color3.fromRGB(255, 242, 0)) or Color3.fromRGB(99, 86, 245),BorderSizePixel = 0,Position = UDim2.new(0, 0, 0, 1),Size = UDim2.new(0, 7, 0, 18),ZIndex = 2})
+    local Text = Create("TextLabel",{TextTruncate = Enum.TextTruncate.AtEnd,Name = "Text",Parent = RemoteTemplate,BackgroundColor3 = Color3.new(1, 1, 1),BackgroundTransparency = 1,Position = UDim2.new(0, 12, 0, 1),Size = UDim2.new(0, 105, 0, 18),ZIndex = 2,Font = Enum.Font.SourceSans,Text = name,TextColor3 = Color3.new(1, 1, 1),TextSize = 14,TextXAlignment = Enum.TextXAlignment.Left})
+    local Button = Create("TextButton",{Name = "Button",Parent = RemoteTemplate,BackgroundColor3 = Color3.new(0, 0, 0),BackgroundTransparency = 0.75,BorderColor3 = Color3.new(1, 1, 1),Position = UDim2.new(0, 0, 0, 1),Size = UDim2.new(0, 117, 0, 18),AutoButtonColor = false,Font = Enum.Font.SourceSans,Text = "",TextColor3 = Color3.new(0, 0, 0),TextSize = 14})
+
+    local id = Create("IntValue",{Name = "ID",Value = #logs + 1,Parent = RemoteTemplate})
+    local log = {
+        Name = name,
+        Function = function_info,
+        Remote = remote,
+        Log = RemoteTemplate,
+        Blocked = blocked,
+        Source = src,
+        GenScript = "-- 正在生成，请稍候... (点击重新加载)\n-- (如果此消息持续存在，则远程参数可能非常长)"
+    }
+    logs[#logs + 1] = log
+    schedule(function()
+        log.GenScript = genScript(remote, args)
+        if blocked then
+            logs[#logs].GenScript = "-- 此远程事件被 SIMPLESPY 阻止发送到服务器\n\n" .. logs[#logs].GenScript
+        end
+    end)
+    local connect = Button.MouseButton1Click:Connect(function()
+        eventSelect(RemoteTemplate)
+    end)
+    if layoutOrderNum < 1 then
+        layoutOrderNum = 999999999
+    end
+    RemoteTemplate.LayoutOrder = layoutOrderNum
+    layoutOrderNum = layoutOrderNum - 1
+    RemoteTemplate.Parent = LogList
+    table.insert(remoteLogs, 1, {connect, RemoteTemplate})
+    clean()
+    updateRemoteCanvas()
+end
+
+--- 从提供的参数生成脚本 (第一个必须是远程路径)
+function genScript(remote, args)
+    prevTables = {}
+    local gen = ""
+    if #args > 0 then
+        if not pcall(function()
+                gen = v2v({args = args}) .. "\n"
+            end)
+        then
+            gen = gen .. "-- TableToString 失败！恢复旧版功能 (结果可能不同)\nlocal args = {"
+            if
+                not pcall(
+                    function()
+                        for i, v in pairs(args) do
+                            if type(i) ~= "Instance" and type(i) ~= "userdata" then
+                                gen = gen .. "\n    [对象] = "
+                            elseif type(i) == "string" then
+                                gen = gen .. '\n    ["' .. i .. '"] = '
+                            elseif type(i) == "userdata" and typeof(i) ~= "Instance" then
+                                gen = gen .. "\n    [" .. string.format("nil --[[%s]]", typeof(v)) .. ")] = "
+                            elseif type(i) == "userdata" then
+                                gen = gen .. "\n    [game." .. i:GetFullName() .. ")] = "
+                            end
+                            if type(v) ~= "Instance" and type(v) ~= "userdata" then
+                                gen = gen .. "对象"
+                            elseif type(v) == "string" then
+                                gen = gen .. '"' .. v .. '"'
+                            elseif type(v) == "userdata" and typeof(v) ~= "Instance" then
+                                gen = gen .. string.format("nil --[[%s]]", typeof(v))
+                            elseif type(v) == "userdata" then
+                                gen = gen .. "game." .. v:GetFullName()
+                            end
+                        end
+                        gen = gen .. "\n}\n\n"
+                    end
+                )
+             then
+                gen = gen .. "}\n-- 旧版 tableToString 失败！无法反编译。"
+            end
+        end
+        if not remote:IsDescendantOf(game) and not getnilrequired then
+            gen = "function getNil(name,class) for _,v in pairs(getnilinstances())do if v.ClassName==class and v.Name==name then return v;end end end\n\n" .. gen
+        end
+        if remote:IsA("RemoteEvent") then
+            gen = gen .. v2s(remote) .. ":FireServer(unpack(args))"
+        elseif remote:IsA("RemoteFunction") then
+            gen = gen .. v2s(remote) .. ":InvokeServer(unpack(args))"
+        end
+    else
+        if remote:IsA("RemoteEvent") then
+            gen = gen .. v2s(remote) .. ":FireServer()"
+        elseif remote:IsA("RemoteFunction") then
+            gen = gen .. v2s(remote) .. ":InvokeServer()"
+        end
+    end
+    prevTables = {}
+    return gen
+end
+
+--- 值转字符串: 值, 字符串 (输出), 级别 (缩进), 父表, 变量名, 是否来自 tovar
+
+local ufunctions = {
+    TweenInfo = function(u)
+        return ("TweenInfo.new(%s, Enum.EasingStyle.%s, Enum.EasingDirection.%s, %s, %s, %s)"):format(tostring(u.Time),tostring(u.EasingStyle),tostring(u.EasingDirection),tostring(u.RepeatCount),tostring(u.Reverses),tostring(u.DelayTime))
+    end,
+    Ray = function(u)
+        return ("Ray.new(%s, %s)"):format(tostring(u.Origin),tostring(u.Direction))
+    end,
+    NumberSequence = function(u)
+        local ret = "NumberSequence.new("
+        for i, v in next, u.KeyPoints do
+            ret = ret .. tostring(v)
+            if i < #u.Keypoints then
+                ret = ret .. ", "
+            end
+        end
+        return ret .. ")"
+    end,
+    DockWidgetPluginGuiInfo = function(u)
+        return ("DockWidgetPluginGuiInfo.new(Enum.InitialDockState%s)"):format(tostring(u))
+    end,
+    ColorSequence = function(u)
+        local ret = "ColorSequence.new("
+        for i, v in next, u.KeyPoints do
+            ret = ret ..("Color3.new(%s)"):format(tostring(v))
+            if i < #u.Keypoints then
+                ret = ret .. ", "
+            end
+        end
+        return ret .. ")"
+    end,
+    BrickColor = function(u)
+        return ("BrickColor.new(%s)"):format(tostring(u.Number))
+    end,
+    NumberRange = function(u)
+        return ("NumberRange.new(%s, %s)"):format(tostring(u.Min),tostring(u.Max))
+    end,
+    Region3 = function(u)
+        local center = u.CFrame.Position
+        local size = u.CFrame.Size
+        local vector1 = center - size / 2
+        local vector2 = center + size / 2
+        return ("Region3.new(%s, %s)"):format(vector1,vector2)
+    end,
+    Faces = function(u)
+        local faces = {}
+        if u.Top then
+            table.insert(faces, "Top")
+        end
+        if u.Bottom then
+            table.insert(faces, "Enum.NormalId.Bottom")
+        end
+        if u.Left then
+            table.insert(faces, "Enum.NormalId.Left")
+        end
+        if u.Right then
+            table.insert(faces, "Enum.NormalId.Right")
+        end
+        if u.Back then
+            table.insert(faces, "Enum.NormalId.Back")
+        end
+        if u.Front then
+            table.insert(faces, "Enum.NormalId.Front")
+        end
+        return ("Faces.new(%s)"):format(table.concat(faces, ", "))
+    end,
+    EnumItem = function(u)
+        return tostring(u)
+    end,
+    Enums = function(u)
+        return "Enum"
+    end,
+    Enum = function(u)
+        return "Enum." .. tostring(u)
+    end,
+    RBXScriptSignal = function(u)
+        return "nil --[[RBXScriptSignal]]"
+    end,
+    Vector3 = function(u)
+        return ("Vector3.new(%s, %s, %s)"):format(v2s(u.X), v2s(u.Y), v2s(u.Z))
+    end,
+    Vector2 = function(u)
+        return ("Vector2.new(%s, %s)"):format(v2s(u.X), v2s(u.Y))
+    end,
+    CFrame = function(u)
+        return ("CFrame.new(%s, %s)"):format(v2s(u.Position), v2s(u.LookVector))
+    end,
+    DockWidgetPluginGuiInfo = function(u)
+        ("DockWidgetPluginGuiInfo(%s, %s, %s, %s, %s, %s, %s)"):format("Enum.InitialDockState.Right", v2s(u.InitialEnabled), v2s(u.InitialEnabledShouldOverrideRestore), v2s(u.FloatingXSize), v2s(u.FloatingYSize), v2s(u.MinWidth), v2s(u.MinHeight))
+    end,
+    PathWaypoint = function(u)
+        return ("PathWaypoint.new(%s, %s)"):format(v2s(u.Position), v2s(u.Action))
+    end,
+    UDim = function(u)
+        return ("UDim.new(%s, %s)"):format(v2s(u.Scale), v2s(u.Offset))
+    end,
+    UDim2 = function(u)
+        return ("UDim2.new(%s, %s, %s, %s)"):format(v2s(u.X.Scale), v2s(u.X.Offset), v2s(u.Y.Scale), v2s(u.Y.Offset))
+    end,
+    Rect = function(u)
+        return ("Rect.new(%s, %s)"):format(v2s(u.Min), v2s(u.Max))
+    end,
+    Color3 = function(u)
+        return ("Color3.fromRGB(%s, %s, %s)"):format(tostring(round(u.r*255)),tostring(round(u.g*255)),tostring(round(u.b*255)))
+    end
+}
+
+local typeofv2sfunctions = {
+    number = function(v)
+        if v == math.huge then
+            return "math.huge"
+        elseif v == -math.huge then
+            return "-math.huge"
+        elseif tostring(v):match("nan") then
+            return "0/0 --[[NaN]]"
+        end
+        return tostring(v)
+    end,
+    boolean = function(v)
+        return tostring(v)
+    end,
+    string = function(v,l)
+        return formatstr(v, l)
+    end,
+    ["function"] = function(v)
+        return f2s(v)
+    end,
+    table = function(v, l, p, n, vtv, i, pt, path, tables, tI)
+        return t2s(v, l, p, n, vtv, i, pt, path, tables, tI)
+    end,
+    Instance = function(v)
+        return i2p(v)
+    end,
+    userdata = function(v)
+        return "newproxy(true)"
+    end
+}
+local typev2sfunctions = {
+    userdata = function(v,vtypeof)
+        if ufunctions[vtypeof] then
+            return ufunctions[vtypeof](v)
+        end
+        return ("%s(nil)"):format(vtypeof)
+    end,
+    vector = function(v)
+        return string.format("Vector3.new(%s, %s, %s)", v2s(v.X), v2s(v.Y), v2s(v.Z))
+    end
+}
+
+
+function v2s(v, l, p, n, vtv, i, pt, path, tables, tI)
+    local vtypeof = typeof(v)
+    local vtype = type(v)
+    if not tI then
+        tI = {0}
+    else
+        tI[1] += 1
+    end
+    if typeofv2sfunctions[vtypeof] then
+        return typeofv2sfunctions[vtypeof](v, l, p, n, vtv, i, pt, path, tables, tI)
+    elseif typev2sfunctions[vtype] then
+        return typev2sfunctions[vtype](v,vtypeof)
+    end
+    return "nil --[[" .. vtypeof .. "]]"
+end
+
+--- 值转变量
+--- @param t any
+function v2v(t)
+    topstr = ""
+    bottomstr = ""
+    getnilrequired = false
+    local ret = ""
+    local count = 1
+    for i, v in next, t do
+        if type(i) == "string" and i:match("^[%a_]+[%w_]*$") then
+            ret = ret .. "local " .. i .. " = " .. v2s(v, nil, nil, i, true) .. "\n"
+        elseif tostring(i):match("^[%a_]+[%w_]*$") then
+            ret = ret .. "local " .. lower(tostring(i)) .. "_" .. tostring(count) .. " = " .. v2s(v, nil, nil, lower(tostring(i)) .. "_" .. tostring(count), true) .. "\n"
+        else
+            ret = ret .. "local " .. type(v) .. "_" .. tostring(count) .. " = " .. v2s(v, nil, nil, type(v) .. "_" .. tostring(count), true) .. "\n"
+        end
+        count = count + 1
+    end
+    if getnilrequired then
+        topstr = "function getNil(name,class) for _,v in next, getnilinstances() do if v.ClassName==class and v.Name==name then return v;end end end\n" .. topstr
+    end
+    if #topstr > 0 then
+        ret = topstr .. "\n" .. ret
+    end
+    if #bottomstr > 0 then
+        ret = ret .. bottomstr
+    end
+    return ret
+end
+
+--- 表转字符串
+--- @param t table
+--- @param l number
+--- @param p table
+--- @param n string
+--- @param vtv boolean
+--- @param i any
+--- @param pt table
+--- @param path string
+--- @param tables table
+--- @param tI table
+function t2s(t, l, p, n, vtv, i, pt, path, tables, tI)
+    local globalIndex = table.find(getgenv(), t) -- 检查表是否为全局变量
+    if type(globalIndex) == "string" then
+        return globalIndex
+    end
+    if not tI then
+        tI = {0}
+    end
+    if not path then -- 将路径设置为空字符串 (这样就不必每次都手动提供)
+        path = ""
+    end
+    if not l then -- 将级别设置为 0 (用于缩进) 和 tables 用于记录已序列化的表
+        l = 0
+        tables = {}
+    end
+    if not p then -- p 是上一个表，但如果它是第一个表则无关紧要
+        p = t
+    end
+    for _, v in next, tables do -- 检查当前表是否已被序列化过
+        if n and rawequal(v, t) then
+            bottomstr = bottomstr .. "\n" .. tostring(n) .. tostring(path) .. " = " .. tostring(n) .. tostring(({v2p(v, p)})[2])
+            return "{} --[[重复]]"
+        end
+    end
+    table.insert(tables, t) -- 将表记录到过去的表中
+    local s =  "{" -- 序列化的开始
+    local size = 0
+    l = l + indent -- 设置缩进级别
+    for k, v in next, t do -- 遍历表
+        size = size + 1 -- 更改大小以达到最大限制
+        if size > (getgenv().SimpleSpyMaxTableSize or 1000) then
+            s = s .. "\n" .. string.rep(" ", l) .. "-- 达到最大表大小，更改 'getgenv().SimpleSpyMaxTableSize' 以调整最大大小 "
+            break
+        end
+        if rawequal(k, t) then -- 检查正在迭代的表是否被用作其自身的索引 (是的，lua)
+            bottomstr = bottomstr .. "\n" .. tostring(n) .. tostring(path) .. "[" .. tostring(n) .. tostring(path) .. "]" .. " = " .. (rawequal(v, k) and tostring(n) .. tostring(path) or v2s(v, l, p, n, vtv, k, t, path .. "[" .. tostring(n) .. tostring(path) .. "]", tables))
+            size -= 1
+            continue
+        end
+        local currentPath = "" -- 初始化 'v' 在 't' 中的路径
+        if type(k) == "string" and k:match("^[%a_]+[%w_]*$") then -- 干净地处理表路径生成 (对于前半部分)
+            currentPath = "." .. k
+        else
+            currentPath = "[" .. v2s(k, l, p, n, vtv, k, t, path .. currentPath, tables, tI) .. "]"
+        end
+        if size % 100 == 0 then
+            scheduleWait()
+        end
+        -- 实际序列化表的成员
+        s = s .. "\n" .. string.rep(" ", l) .. "[" .. v2s(k, l, p, n, vtv, k, t, path .. currentPath, tables, tI) .. "] = " .. v2s(v, l, p, n, vtv, k, t, path .. currentPath, tables, tI) .. ","
+    end
+    if #s > 1 then -- 删除最后一个逗号，因为它看起来更好看 (直到完成才知道是否完成，所以...)
+        s = s:sub(1, #s - 1)
+    end
+    if size > 0 then -- 干净地缩进最后一个花括号
+        s = s .. "\n" .. string.rep(" ", l - indent)
+    end
+    return s .. "}"
+end
+
+--- 函数转字符串
+function f2s(f)
+    for k, x in next, getgenv() do
+        local isgucci, gpath
+        if rawequal(x, f) then
+            isgucci, gpath = true, ""
+        elseif type(x) == "table" then
+            isgucci, gpath = v2p(f, x)
+        end
+        if isgucci and type(k) ~= "function" then
+            if type(k) == "string" and k:match("^[%a_]+[%w_]*$") then
+                return k .. gpath
+            else
+                return "getgenv()[" .. v2s(k) .. "]" .. gpath
+            end
+        end
+        if funcEnabled and getinfo(f).name:match("^[%a_]+[%w_]*$") then
+            return ("function() %s end"):format(getinfo(f).name)
+        end
+        return ("function() %s end"):format(tostring(f))
+    end
+end
+
+--- 实例转路径
+--- @param i userdata
+function i2p(i)
+    local player = getplayer(i)
+    local parent = i
+    local out = ""
+    if parent == nil then
+        return "nil"
+    elseif player then
+        while true do
+            if parent and parent == player.Character then
+                if player == Players.LocalPlayer then
+                    return 'game:FindService("Players").LocalPlayer.Character' .. out
+                else
+                    return i2p(player) .. ".Character" .. out
+                end
+            else
+                if parent.Name:match("[%a_]+[%w+]*") ~= parent.Name then
+                    out = ':FindFirstChild(' .. formatstr(parent.Name) .. ')' .. out
+                else
+                    out = "." .. parent.Name .. out
+                end
+            end
+            parent = parent.Parent
+        end
+    elseif parent ~= game then
+        while true do
+            if parent and parent.Parent == game then
+                if game:FindService(parent.ClassName) then
+                    if lower(parent.ClassName) == "workspace" then
+                        return "workspace" .. out
+                    else
+                        return 'game:GetService("' .. parent.ClassName .. '")' .. out
+                    end
+                else
+                    if parent.Name:match("[%a_]+[%w_]*") then
+                        return "game." .. parent.Name .. out
+                    else
+                        return 'game:FindFirstChild(' .. formatstr(parent.Name) .. ')' .. out
+                    end
+                end
+            elseif parent.Parent == nil then
+                getnilrequired = true
+                return 'getNil(' .. formatstr(parent.Name) .. ', "' .. parent.ClassName .. '")' .. out
+            elseif parent == Players.LocalPlayer then
+                out = ".LocalPlayer" .. out
+            else
+                if parent.Name:match("[%a_]+[%w_]*") ~= parent.Name then
+                    out = ':FindFirstChild(' .. formatstr(parent.Name) .. ')' .. out
+                else
+                    out = "." .. parent.Name .. out
+                end
+            end
+            parent = parent.Parent
+        end
+    else
+        return "game"
+    end
+end
+
+--- 获取实例所属的玩家
+function getplayer(instance)
+    for _, v in next, Players:GetPlayers() do
+        if v.Character and (instance:IsDescendantOf(v.Character) or instance == v.Character) then
+            return v
+        end
+    end
+end
+
+--- 值转路径 (在表中)
+function v2p(x, t, path, prev)
+    if not path then
+        path = ""
+    end
+    if not prev then
+        prev = {}
+    end
+    if raweequal(x, t) then
+        return true, ""
+    end
+    for i, v in next, t do
+        if raweequal(v, x) then
+            if type(i) == "string" and i:match("^[%a_]+[%w_]*$") then
+                return true, (path .. "." .. i)
+            else
+                return true, (path .. "[" .. v2s(i) .. "]")
+            end
+        end
+        if type(v) == "table" then
+            local duplicate = false
+            for _, y in next, prev do
+                if raweequal(y, v) then
+                    duplicate = true
+                    end
+                end
+            if not duplicate then
+                table.insert(prev, t)
+                local found
+                found, p = v2p(x, v, path, prev)
+                if found then
+                    if type(i) == "string" and i:match("^[%a_]+[%w_]*$") then
+                        return true, "." .. i .. p
+                    else
+                        return true, "[" .. v2s(i) .. "]" .. p
+                    end
+                end
+            end
+        end
+    end
+    return false, ""
+end
+
+--- 格式化字符串: s: 字符串, 字节加密 (用于奇怪符号)
+function formatstr(s, indentation)
+    if not indentation then
+        indentation = 0
+    end
+    local handled, reachedMax = handlespecials(s, indentation)
+    return '"' .. handled .. '"' .. (reachedMax and " --[[ 达到最大字符串大小，更改 'getgenv().SimpleSpyMaxStringSize' 以调整最大大小 ]]" or "")
+end
+
+--- 为文本添加 \ 作为空白字符和其他内容的替换，因为 string.format 不能处理
+function handlespecials(s, indentation)
+    local i = 0
+    local n = 1
+    local coroutines = {}
+    local coroutineFunc = function(i, r)
+        s = s:sub(0, i - 1) .. r .. s:sub(i + 1, -1)
+    end
+    local function isFinished()
+        for _, v in next, coroutines do
+            if coroutine.status(v) == "running" then
+                return false
+            end
+        end
+        return true
+    end
+    repeat
+        i = i + 1
+        local char = s:sub(i, i)
+        if string.byte(char) then
+            local c = coroutine.create(coroutineFunc)
+            table.insert(coroutines, c)
+            if char == "\n" then
+                coroutine.resume(c, i, "\\n")
+                -- s = s:sub(0, i - 1) .. "\\n" .. s:sub(i + 1, -1)
+                i = i + 1
+            elseif char == "\t" then
+                coroutine.resume(c, i, "\\t")
+                -- s = s:sub(0, i - 1) .. "\\t" .. s:sub(i + 1, -1)
+                i = i + 1
+            elseif char == "\\" then
+                coroutine.resume(c, i, "\\\\")
+                -- s = s:sub(0, i - 1) .. "\\\\" .. s:sub(i + 1, -1)
+                i = i + 1
+            elseif char == '"' then
+                coroutine.resume(c, i, "\\\"")
+                -- s = s:sub(0, i - 1) .. '\\"' .. s:sub(i + 1, -1)
+                i = i + 1
+            elseif string.byte(char) > 126 or string.byte(char) < 32 then
+                coroutine.resume(c, i, "\\" .. string.byte(char))
+                -- s = s:sub(0, i - 1) .. "\\" .. string.byte(char) .. s:sub(i + 1, -1)
+                i = i + #tostring(string.byte(char))
+            end
+            if i >= n * 100 then
+                local extra = string.format('" ..\n%s"', string.rep(" ", indentation + indent))
+                s = s:sub(0, i) .. extra .. s:sub(i + 1, -1)
+                i += #extra
+                n += 1
+                scheduleWait()
+            end
+        end
+    until char == "" or i > (getgenv().SimpleSpyMaxStringSize or 10000)
+    while not isFinished() do
+        RunService.Heartbeat:Wait()
+    end
+    if i > (getgenv().SimpleSpyMaxStringSize or 10000) then
+        s = string.sub(s, 0, getgenv().SimpleSpyMaxStringSize or 10000)
+        return s, true
+    end
+    return s, false
+end
+
+--- 从 getinfo 的 'src' 中查找脚本，如果未找到则返回 nil
+--- @param src string
+function getScriptFromSrc(src)
+    local realPath
+    local runningTest
+    --- @type number
+    local s, e
+    local match = false
+    if src:sub(1, 1) == "=" then
+        realPath = game
+        s = 2
+    else
+        runningTest = src:sub(2, e and e - 1 or -1)
+        for _, v in next, getnilinstances() do
+            if v.Name == runningTest then
+                realPath = v
+                break
+            end
+        end
+        s = #runningTest + 1
+    end
+    if realPath then
+        e = src:sub(s, -1):find("%.")
+        local i = 0
+        repeat
+            i += 1
+            if not e then
+                runningTest = src:sub(s, -1)
+                local test = realPath.FindFirstChild(realPath, runningTest)
+                if test then
+                    realPath = test
+                end
+                match = true
+            else
+                runningTest = src:sub(s, e)
+                local test = realPath.FindFirstChild(realPath, runningTest)
+                local yeOld = e
+                if test then
+                    realPath = test
+                    s = e + 2
+                    e = src:sub(e + 2, -1):find("%.")
+                    e = e and e + yeOld or e
+                else
+                    e = src:sub(e + 2, -1):find("%.")
+                    e = e and e + yeOld or e
+                end
+            end
+        until match or i >= 50
+    end
+    return realPath
+end
+
+--- 调度提供的函数 (并使用之后的任何参数调用它)
+function schedule(f, ...)
+    table.insert(scheduled, {f, ...})
+end
+
+--- 暂停当前线程，直到调度程序给出 ok
+function scheduleWait()
+    local thread = coroutine.running()
+    schedule(function()
+        coroutine.resume(thread)
+    end)
+    coroutine.yield()
+end
+
+--- 大型 (嗯，现在其实很小) 的任务调度程序本身，尽可能快地处理几乎所有事情
+function taskscheduler()
+    if not toggle then
+        scheduled = {}
+        return
+    end
+    if #scheduled > 1000 then
+        table.remove(scheduled, #scheduled)
+    end
+    if #scheduled > 0 then
+        local currentf = scheduled[1]
+        table.remove(scheduled, 1)
+        if type(currentf) == "table" and type(currentf[1]) == "function" then
+            pcall(unpack(currentf))
+        end
+    end
+end
+
+--- 处理远程日志
+function remoteHandler(hookfunction, methodName, remote, args, func, calling)
+    if remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction") then
+        if funcEnabled and not calling then
+            _, calling = pcall(getScriptFromSrc, getinfo(func).source)
+        end
+        coroutine.wrap(function()
+            if remoteSignals[remote] then
+                remoteSignals[remote]:Fire(args)
+            end
+        end)()
+        if autoblock then
+            if excluding[remote] then
+                return
+            end
+            if not history[remote] then
+                history[remote] = {badOccurances = 0, lastCall = tick()}
+            end
+            if tick() - history[remote].lastCall < 1 then
+                history[remote].badOccurances += 1
+                return
+            else
+                history[remote].badOccurances = 0
+            end
+            if history[remote].badOccurances > 3 then
+                excluding[remote] = true
+                return
+            end
+            history[remote].lastCall = tick()
+        end
+        local functionInfoStr
+        local src
+        if func and islclosure(func) then
+            functionInfoStr = {
+                info = getinfo(func),
+                constants = getconstants(func),
+                upvalues = getupvalues(func)
+            }
+            --functionInfoStr = v2v{functionInfo = functionInfo}
+            if type(calling) == "userdata" then
+                src = calling
+            end
+        end
+        if lower(methodName) == "fireserver" then
+            newRemote("event", remote.Name, args, remote, functionInfoStr, (blocklist[remote] or blocklist[remote.Name]), src)
+        elseif lower(methodName) == "invokeserver" then
+            newRemote("function", remote.Name, args, remote, functionInfoStr, (blocklist[remote] or blocklist[remote.Name]), src)
+        end
+    end
+end
+
+local newindex = function(remote,property,...)
+    if hookmetamethodtoggle then return originalindex(remote,property,...) end
+    if not logcheckcaller and checkcaller() then return originalindex(remote,property,...) end
+    local args = {...}
+    local methodName = lower(property)
+    if methodtypes[methodName] then
+        if not (blacklist[remote] or blacklist[remote.Name]) then
+            local func
+            local calling
+            if funcEnabled then
+                func = getinfo(getinfolevel).func-- or funcInfo
+                calling = (getcallingscript and getcallingscript()) or nil
+            end
+            coroutine.wrap(function()
+                schedule(remoteHandler, false, methodName, remote, args, func, calling)
+            end)()
+        end
+        if typeof(remote) == "Instance" and (blocklist[remote] or blocklist[remote.Name]) then
+            return
+        end
+    end
+    return originalindex(remote,property,...)
+end
+
+local newnamecall = newcclosure(function(remote, ...)
+    if hookmetamethodtoggle then return originalnamecall(remote,...) end
+    if not logcheckcaller and checkcaller() then return originalnamecall(remote, ...) end
+    local args = {...}
+    local methodName = lower(getnamecallmethod())
+    if methodtypes[methodName] then
+        if not (blacklist[remote] or blacklist[remote.Name]) then
+            local func
+            local calling
+            if funcEnabled then
+                func = getinfo(getinfolevel).func-- or funcInfo
+                calling = getcallingscript() or nil
+            end
+            coroutine.wrap(function()
+                schedule(remoteHandler, false, methodName, remote, args, func, calling)
+            end)()
+        end
+        if typeof(remote) == "Instance" and (blocklist[remote] or blocklist[remote.Name]) then
+            return
+        end
+    end
+    return originalnamecall(remote, ...)
+end)
+
+--- 打开和关闭远程间谍
+function toggleSpy()
+    hookmetamethodtoggle = not hookmetamethodtoggle
+    if not toggle then
+        if not hookmetamethod then
+            warn("SimpleSpy: 未找到 namecall 方法！\n")
+            onToggleButtonClick()
+            return
+        end
+    end
+end
+
+--- 在两种远程间谍方法之间切换 (hookfunction 当前 = 禁用)
+function toggleSpyMethod()
+    toggleSpy()
+    toggle = not toggle
+end
+
+--- 关闭远程间谍
+function shutdown()
+    if schedulerconnect then
+        schedulerconnect:Disconnect()
+    end
+    for _, connection in next, connections do
+        coroutine.wrap(function()
+            connection:Disconnect()
+        end)()
+    end
+    hookmetamethodtoggle = true
+    SimpleSpy3:Destroy()
+    getgenv().SimpleSpyExecuted = false
+end
+
+-- 主程序
+if not getgenv().SimpleSpyExecuted then
+    local succeeded, err = pcall(function()
+        if not RunService:IsClient() then
+            error("SimpleSpy 无法在服务器上运行！")
+        end
+        if not originalnamecall then
+            originalnamecall = hookmetamethod(game,"__namecall",newnamecall)
+        end
+        if not originalindex then
+            originalindex = hookmetamethod(game,"__index",newindex)
+        end
+        getgenv().SimpleSpyShutdown = shutdown
+        ContentProvider:PreloadAsync({"rbxassetid://6065821980", "rbxassetid://6065774948", "rbxassetid://6065821086", "rbxassetid://6065821596", ImageLabel, ImageLabel_2, ImageLabel_3})
+        -- if gethui then funcEnabled = false end
+        onToggleButtonClick()
+        FunctionTemplate.Parent = nil
+        codebox = Highlight.new(CodeBox)
+        coroutine.wrap(function()
+            codebox:setRaw(game:HttpGet("https://raw.githubusercontent.com/78n/SimpleSpy/main/UpdateLog.lua") or "")
+        end)()
+        getgenv().SimpleSpy = SimpleSpy
+        getgenv().getNil = function(name,class)
+			for _,v in next, getnilinstances() do
+				if v.ClassName == class and v.Name == name then
+					return v;
+				end
+			end
+		end
+        TextLabel:GetPropertyChangedSignal("Text"):Connect(scaleToolTip)
+        -- TopBar.InputBegan:Connect(onBarInput)
+        MinimizeButton.MouseButton1Click:Connect(toggleMinimize)
+        MaximizeButton.MouseButton1Click:Connect(toggleSideTray)
+        Simple.MouseButton1Click:Connect(onToggleButtonClick)
+        CloseButton.MouseEnter:Connect(onXButtonHover)
+        CloseButton.MouseLeave:Connect(onXButtonUnhover)
+        Simple.MouseEnter:Connect(onToggleButtonHover)
+        Simple.MouseLeave:Connect(onToggleButtonUnhover)
+        CloseButton.MouseButton1Click:Connect(shutdown)
+        table.insert(connections, UserInputService.InputBegan:Connect(backgroundUserInput))
+        connectResize()
+        SimpleSpy3.Enabled = true
+        coroutine.wrap(function()
+            wait(1)
+            onToggleButtonUnhover()
+        end)()
+        schedulerconnect = RunService.Heartbeat:Connect(taskscheduler)
+        bringBackOnResize()
+        SimpleSpy3.Parent = (gethui and gethui()) or (syn and syn.protect_gui and syn.protect_gui(SimpleSpy3)) or game:FindService("CoreGui")
+        if not Players.LocalPlayer then
+            Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+        end
+        Mouse = Players.LocalPlayer:GetMouse()
+        oldIcon = Mouse.Icon
+        table.insert(connections, Mouse.Move:Connect(mouseMoved))
+    end)
+    if succeeded then
+        getgenv().SimpleSpyExecuted = true
+    else
+        warn("发生错误\n" .. tostring(err))
+        SimpleSpy3:Destroy()
+        return
+    end
+else
+    SimpleSpy3:Destroy()
+    return
+end
+
+----- 附加功能 ----- (轻松添加或删除远程间谍的附加功能！)
+--[[
+    一些有用的信息：
+        - 在此处添加您的函数，并通过 'newButton' 函数为它们创建按钮
+        - 提供的第一个参数是玩家点击运行函数的 TextButton
+        - 生成的脚本在 namecall 最初触发时生成并保存在 remoteFrame 对象中
+        - 黑名单中的远程事件将在 namecall 中直接忽略 (减少延迟)
+        - 'remoteFrame' 对象的属性：
+            {
+                Name: (string) 远程事件的名称
+                GenScript: (string) 出现在代码框中的生成脚本 (在 namecall 触发时生成)
+                Source: (Instance (LocalScript)) 触发/调用远程事件的脚本
+                Remote: (Instance (RemoteEvent) | Instance (RemoteFunction)) 被触发/调用的远程事件
+                Log: (Instance (TextButton)) 用于远程事件的按钮 (与 'selected.Log' 相同)
+            }
+        - 全局变量列表: (更多信息或建议，请联系 @exx#9394)
+            - closed: (boolean) GUI 当前是否最小化
+            - logs: (table[remoteFrame]) 充满 remoteFrame 对象 (属性如上所列)
+            - selected: (remoteFrame) 当前选中的 remoteFrame (属性如上所列)
+            - blacklist: (string[] | Instance[] (RemoteEvent) | Instance[] (RemoteFunction)) 黑名单名称和远程事件的数组
+            - codebox: (Instance (TextBox)) 保存所有代码的文本框 - 经常清除
+]]
+-- 复制代码框的内容
+newButton(
+    "复制代码",
+    function() return "点击复制代码" end,
+    function()
+        setclipboard(codebox:getString())
+        TextLabel.Text = "复制成功！"
+    end
+)
+
+--- 复制源脚本 (触发远程事件的脚本)
+newButton(
+    "复制远程事件",
+    function() return "点击复制远程事件的路径" end,
+    function()
+        if selected then
+            setclipboard(v2s(selected.Remote))
+            TextLabel.Text = "已复制！"
+        end
+    end
+)
+
+-- 通过 loadstring 执行代码框的内容
+newButton(
+    "运行代码",
+    function() return "点击执行代码" end,
+    function()
+        local orText = "点击执行代码"
+        TextLabel.Text = "正在执行..."
+        local succeeded = pcall(function() return loadstring(codebox:getString())() end)
+        if succeeded then
+            TextLabel.Text = "执行成功！"
+        else
+            TextLabel.Text = "执行错误！"
+        end
+    end
+)
+
+--- 获取调用脚本 (不是超级可靠，但随便吧)
+newButton(
+    "获取脚本",
+    function() return "点击将调用脚本复制到剪贴板\n警告：不是超级可靠，nil == 无法找到" end,
+    function()
+        if selected and selected.Source then
+            setclipboard(v2s(selected.Source))
+            TextLabel.Text = "完成！"
+        end
+    end
+)
+
+--- 反编译触发远程事件的脚本并将其放入代码框中
+newButton(
+    "函数信息",
+    function() return "点击查看调用函数信息" end,
+    function()
+        if selected then
+            if selected.Function then
+                codebox:setRaw("--[[正在生成函数信息，请稍候]]")
+                RunService.Heartbeat:Wait()
+                if typeof(selected.Function) ~= 'string' then
+                    selected.Function = tostring(v2v({functionInfo = selected.Function}))
+                end
+                codebox:setRaw("-- 调用函数信息\n-- 由 SimpleSpy 序列化器生成\n\n"..selected.Function)
+            end
+            TextLabel.Text = "完成！函数信息由 SimpleSpy 序列化器生成。"
+        end
+    end
+)
+
+--- 清除远程日志
+newButton(
+    "清除日志",
+    function() return "点击清除日志" end,
+    function()
+        TextLabel.Text = "正在清除..."
+        logs = {}
+        for i,v in next, LogList:GetChildren() do
+            if not v:IsA("UIListLayout") then
+                v:Destroy()
+            end
+        end
+        codebox:setRaw("")
+        selected = nil
+        TextLabel.Text = "日志已清除！"
+    end
+)
+
+--- 从 RemoteSpy 中排除选定的.Log 远程事件
+newButton(
+    "排除 (i)",
+    function() return "点击排除此远程事件。\n排除远程事件会使 SimpleSpy 忽略它，但它将继续可用。" end,
+    function()
+        if selected then
+            blacklist[selected.Remote] = true
+            TextLabel.Text = "已排除！"
+        end
+    end
+)
+
+--- 从 RemoteSpy 中排除所有与选定.Log 远程事件同名的远程事件
+newButton(
+    "排除 (n)",
+    function() return "点击排除所有同名的远程事件。\n排除远程事件会使 SimpleSpy 忽略它，但它将继续可用。" end,
+    function()
+        if selected then
+            blacklist[selected.Name] = true
+            TextLabel.Text = "已排除！"
+        end
+    end
+)
+
+--- 清除黑名单
+newButton("清除黑名单",
+    function() return "点击清除黑名单。\n排除远程事件会使 SimpleSpy 忽略它，但它将继续可用。" end,
+    function()
+        blacklist = {}
+        TextLabel.Text = "黑名单已清除！"
+    end
+)
+
+--- 阻止选定的.Log 远程事件触发服务器 (仍然记录)
+newButton(
+    "阻止 (i)",
+    function() return "点击停止此远程事件触发。\n阻止远程事件不会将其从 SimpleSpy 日志中删除，但它将不再触发服务器。" end,
+    function()
+        if selected then
+            blocklist[selected.Remote] = true
+            TextLabel.Text = "已排除！"
+        end
+    end
+)
+
+--- 阻止所有与选定.Log 远程事件同名的远程事件触发服务器 (仍然记录)
+newButton("阻止 (n)",function()
+    return "点击停止同名远程事件触发。\n阻止远程事件不会将其从 SimpleSpy 日志中删除，但它将不再触发服务器。" end,
+    function()
+        if selected then
+            blocklist[selected.Name] = true
+            TextLabel.Text = "已排除！"
+        end
+    end
+)
+
+--- 清除阻止列表
+newButton(
+    "清除阻止列表",
+    function() return "点击停止阻止远程事件。\n阻止远程事件不会将其从 SimpleSpy 日志中删除，但它将不再触发服务器。" end,
+    function()
+        blocklist = {}
+        TextLabel.Text = "阻止列表已清除！"
+    end
+)
+
+--- 尝试反编译源脚本
+newButton("反编译",
+    function() return "反编译源脚本" end,
+    function()
+        if selected and selected.Source then
+            codebox:setRaw("--[[正在反编译]]")
+            local decompiledsource
+            local suc,err = pcall(function()
+                decompiledsource = decompile(selected.Source)
+            end)
+            if suc then
+                if lower(decompiledsource):find("script") and SimpleSpy:ValueToString(selected.Source) then
+                    decompiledsource = ("local script = %s\n%s"):format(SimpleSpy:ValueToString(selected.Source),decompiledsource)
+                end
+                codebox:setRaw(decompiledsource:gsub("-- Decompiled with the Synapse X Luau decompiler.",""))
+            else
+                codebox:setRaw(("--[[\n发生错误\n%s\n]]"):format(err))
+            end
+            TextLabel.Text = "完成！"
+        else
+            TextLabel.Text = "未找到源！"
+        end
+    end)
+
+newButton(
+    "禁用信息",
+    function() return string.format("[%s] 切换函数信息 (因为它在某些游戏中可能导致延迟)", funcEnabled and "启用" or "禁用") end,
+    function()
+        funcEnabled = not funcEnabled
+        TextLabel.Text = string.format("[%s] 切换函数信息 (因为它在某些游戏中可能导致延迟)", funcEnabled and "启用" or "禁用")
+    end
+)
+
+newButton(
+    "自动阻止",
+    function() return string.format("[%s] [测试版] 智能检测并排除日志中的垃圾远程调用", autoblock and "启用" or "禁用") end,
+    function()
+        autoblock = not autoblock
+        TextLabel.Text = string.format("[%s] [测试版] 智能检测并排除日志中的垃圾远程调用", autoblock and "启用" or "禁用")
+        history = {}
+        excluding = {}
+    end
+)
+
+newButton("记录检查调用者",function()
+    return ("[%s] 记录由客户端触发的远程事件"):format(logcheckcaller and "启用" or "禁用")
+    end,
+    function()
+        logcheckcaller = not logcheckcaller
+        TextLabel.Text = ("[%s] 记录由客户端触发的远程事件"):format(logcheckcaller and "启用" or "禁用")
+    end
+)
