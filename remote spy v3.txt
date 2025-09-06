@@ -1,0 +1,757 @@
+if getgenv().SimpleSpyExecuted and type(getgenv().SimpleSpyShutdown) == "function" then
+    getgenv().SimpleSpyShutdown()
+end
+
+local function Create(instance, properties, children)
+    local obj = Instance.new(instance)
+
+    for i, v in next, properties or {} do
+        obj[i] = v
+        for _, child in next, children or {} do
+            child.Parent = obj;
+        end
+    end
+    return obj;
+end
+
+local game = game
+local workspace = workspace
+local table = table
+local math = math
+local coroutine = coroutine
+local string = string
+local lower = string.lower
+local round = math.round
+local tostring = tostring
+local tonumber = tonumber
+
+local Players = game:FindService("Players")
+local RunService = game:FindService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local ContentProvider = game:GetService("ContentProvider")
+local TextService = game:GetService("TextService")
+
+local getcustomasset = getsynasset or getcustomasset
+
+local Highlight = (isfile and readfile and isfile("Highlight.lua") and loadstring(readfile("Highlight.lua"))()) or loadstring(game:HttpGet("https://raw.githubusercontent.com/Kurumi0343/roblox/main/Highlight.lua"))()
+
+---- 由 GUI to LUA 生成 (某种程度上来说) ----
+
+-- 实例:
+
+local SimpleSpy3 = Create("ScreenGui",{Name = "SimpleSpy3",ResetOnSpawn = false})
+local Background = Create("Frame",{Name = "Background",Parent = SimpleSpy3,BackgroundColor3 = Color3.new(1, 1, 1),BackgroundTransparency = 1,Position = UDim2.new(0, 500, 0, 200),Size = UDim2.new(0, 450, 0, 268)})
+local LeftPanel = Create("Frame",{Name = "LeftPanel",Parent = Background,BackgroundColor3 = Color3.fromRGB(53, 52, 55),BorderSizePixel = 0,Position = UDim2.new(0, 0, 0, 19),Size = UDim2.new(0, 131, 0, 249)})
+local LogList = Create("ScrollingFrame",{Name = "LogList",Parent = LeftPanel,Active = true,BackgroundColor3 = Color3.new(1, 1, 1),BackgroundTransparency = 1,BorderSizePixel = 0,Position = UDim2.new(0, 0, 0, 9),Size = UDim2.new(0, 131, 0, 232),CanvasSize = UDim2.new(0, 0, 0, 0),ScrollBarThickness = 4})
+local UIListLayout = Create("UIListLayout",{Parent = LogList,HorizontalAlignment = Enum.HorizontalAlignment.Center,SortOrder = Enum.SortOrder.LayoutOrder})
+local RightPanel = Instance.new("Frame")
+local CodeBox = Instance.new("Frame")
+local ScrollingFrame = Instance.new("ScrollingFrame")
+local UIGridLayout = Instance.new("UIGridLayout")
+local FunctionTemplate = Create("Frame",{Name = "FunctionTemplate",Parent = ScrollingFrame,BackgroundColor3 = Color3.new(1, 1, 1),BackgroundTransparency = 1,Size = UDim2.new(0, 117, 0, 23)})
+local ColorBar_2 = Instance.new("Frame")
+local Text_2 = Instance.new("TextLabel")
+local Button_2 = Instance.new("TextButton")
+local TopBar = Instance.new("Frame")
+local Simple = Instance.new("TextButton")
+local CloseButton = Instance.new("TextButton")
+local ImageLabel = Instance.new("ImageLabel")
+local MaximizeButton = Instance.new("TextButton")
+local ImageLabel_2 = Instance.new("ImageLabel")
+local MinimizeButton = Instance.new("TextButton")
+local ImageLabel_3 = Instance.new("ImageLabel")
+local ToolTip = Instance.new("Frame")
+local TextLabel = Instance.new("TextLabel")
+
+-- 属性:
+RightPanel.Name = "RightPanel"
+RightPanel.Parent = Background
+RightPanel.BackgroundColor3 = Color3.fromRGB(37, 36, 38)
+RightPanel.BorderSizePixel = 0
+RightPanel.Position = UDim2.new(0, 131, 0, 19)
+RightPanel.Size = UDim2.new(0, 319, 0, 249)
+
+CodeBox.Name = "CodeBox"
+CodeBox.Parent = RightPanel
+CodeBox.BackgroundColor3 = Color3.new(0.0823529, 0.0745098, 0.0784314)
+CodeBox.BorderSizePixel = 0
+CodeBox.Size = UDim2.new(0, 319, 0, 119)
+
+ScrollingFrame.Parent = RightPanel
+ScrollingFrame.Active = true
+ScrollingFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+ScrollingFrame.BackgroundTransparency = 1
+ScrollingFrame.Position = UDim2.new(0, 0, 0.5, 0)
+ScrollingFrame.Size = UDim2.new(1, 0, 0.5, -9)
+ScrollingFrame.CanCanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollingFrame.ScrollBarThickness = 4
+
+UIGridLayout.Parent = ScrollingFrame
+UIGridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIGridLayout.CellPadding = UDim2.new(0, 0, 0, 0)
+UIGridLayout.CellSize = UDim2.new(0, 94, 0, 27)
+
+ColorBar_2.Name = "ColorBar"
+ColorBar_2.Parent = FunctionTemplate
+ColorBar_2.BackgroundColor3 = Color3.new(1, 1, 1)
+ColorBar_2.BorderSizePixel = 0
+ColorBar_2.Position = UDim2.new(0, 7, 0, 10)
+ColorBar_2.Size = UDim2.new(0, 7, 0, 18)
+ColorBar_2.ZIndex = 3
+
+Text_2.Name = "Text"
+Text_2.Parent = FunctionTemplate
+Text_2.BackgroundColor3 = Color3.new(1, 1, 1)
+Text_2.BackgroundTransparency = 1
+Text_2.Position = UDim2.new(0, 19, 0, 10)
+Text_2.Size = UDim2.new(0, 69, 0, 18)
+Text_2.ZIndex = 2
+Text_2.Font = Enum.Font.SourceSans
+Text_2.Text = "文本"
+Text_2.TextColor3 = Color3.new(1, 1, 1)
+Text_2.TextSize = 14
+Text_2.TextStrokeColor3 = Color3.new(0.145098, 0.141176, 0.14902)
+Text_2.TextXAlignment = Enum.TextXAlignment.Left
+
+Button_2.Name = "Button"
+Button_2.Parent = FunctionTemplate
+Button_2.BackgroundColor3 = Color3.new(0, 0, 0)
+Button_2.BackgroundTransparency = 0.69999998807907
+Button_2.BorderColor3 = Color3.new(1, 1, 1)
+Button_2.Position = UDim2.new(0, 7, 0, 10)
+Button_2.Size = UDim2.new(0, 80, 0, 18)
+Button_2.AutoButtonColor = false
+Button_2.Font = Enum.Font.SourceSans
+Button_2.Text = ""
+Button_2.TextColor3 = Color3.new(0, 0, 0)
+Button_2.TextSize = 14
+
+TopBar.Name = "TopBar"
+TopBar.Parent = Background
+TopBar.BackgroundColor3 = Color3.fromRGB(37, 35, 38)
+TopBar.BorderSizePixel = 0
+TopBar.Size = UDim2.new(0, 450, 0, 19)
+
+Simple.Name = "Simple"
+Simple.Parent = TopBar
+Simple.BackgroundColor3 = Color3.new(1, 1, 1)
+Simple.AutoButtonColor = false
+Simple.BackgroundTransparency = 1
+Simple.Position = UDim2.new(0, 5, 0, 0)
+Simple.Size = UDim2.new(0, 57, 0, 18)
+Simple.Font = Enum.Font.SourceSansBold
+Simple.Text = "SimpleSpy"
+Simple.TextColor3 = Color3.new(1, 1, 1)
+Simple.TextSize = 14
+Simple.TextXAlignment = Enum.TextXAlignment.Left
+
+CloseButton.Name = "CloseButton"
+CloseButton.Parent = TopBar
+CloseButton.BackgroundColor3 = Color3.new(0.145098, 0.141176, 0.14902)
+CloseButton.BorderSizePixel = 0
+CloseButton.Position = UDim2.new(1, -19, 0, 0)
+CloseButton.Size = UDim2.new(0, 19, 0, 19)
+CloseButton.Font = Enum.Font.SourceSans
+CloseButton.Text = ""
+CloseButton.TextColor3 = Color3.new(0, 0, 0)
+CloseButton.TextSize = 14
+
+ImageLabel.Parent = CloseButton
+ImageLabel.BackgroundColor3 = Color3.new(1, 1, 1)
+ImageLabel.BackgroundTransparency = 1
+ImageLabel.Position = UDim2.new(0, 5, 0, 5)
+ImageLabel.Size = UDim2.new(0, 9, 0, 9)
+ImageLabel.Image = "http://www.roblox.com/asset/?id=5597086202"
+
+MaximizeButton.Name = "MaximizeButton"
+MaximizeButton.Parent = TopBar
+MaximizeButton.BackgroundColor3 = Color3.new(0.145098, 0.141176, 0.14902)
+MaximizeButton.BorderSizePixel = 0
+MaximizeButton.Position = UDim2.new(1, -38, 0, 0)
+MaximizeButton.Size = UDim2.new(0, 19, 0, 19)
+MaximizeButton.Font = Enum.Font.SourceSans
+MaximizeButton.Text = ""
+MaximizeButton.TextColor3 = Color3.new(0, 0, 0)
+MaximizeButton.TextSize = 14
+
+ImageLabel_2.Parent = MaximizeButton
+ImageLabel_2.BackgroundColor3 = Color3.new(1, 1, 1)
+ImageLabel_2.BackgroundTransparency = 1
+ImageLabel_2.Position = UDim2.new(0, 5, 0, 5)
+ImageLabel_2.Size = UDim2.new(0, 9, 0, 9)
+ImageLabel_2.Image = "http://www.roblox.com/asset/?id=5597108117"
+
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Parent = TopBar
+MinimizeButton.BackgroundColor3 = Color3.new(0.145098, 0.141176, 0.14902)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Position = UDim2.new(1, -57, 0, 0)
+MinimizeButton.Size = UDim2.new(0, 19, 0, 19)
+MinimizeButton.Font = Enum.Font.SourceSans
+MinimizeButton.Text = ""
+MinimizeButton.TextColor3 = Color3.new(0, 0, 0)
+MinimizeButton.TextSize = 14
+
+ImageLabel_3.Parent = MinimizeButton
+ImageLabel_3.BackgroundColor3 = Color3.new(1, 1, 1)
+ImageLabel_3.BackgroundTransparency = 1
+ImageLabel_3.Position = UDim2.new(0, 5, 0, 5)
+ImageLabel_3.Size = UDim2.new(0, 9, 0, 9)
+ImageLabel_3.Image = "http://www.roblox.com/asset/?id=5597105827"
+
+ToolTip.Name = "ToolTip"
+ToolTip.Parent = SimpleSpy3
+ToolTip.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
+ToolTip.BackgroundTransparency = 0.1
+ToolTip.BorderColor3 = Color3.new(1, 1, 1)
+ToolTip.Size = UDim2.new(0, 200, 0, 50)
+ToolTip.ZIndex = 3
+ToolTip.Visible = false
+
+TextLabel.Parent = ToolTip
+TextLabel.BackgroundColor3 = Color3.new(1, 1, 1)
+TextLabel.BackgroundTransparency = 1
+TextLabel.Position = UDim2.new(0, 2, 0, 2)
+TextLabel.Size = UDim2.new(0, 196, 0, 46)
+TextLabel.ZIndex = 3
+TextLabel.Font = Enum.Font.SourceSans
+TextLabel.Text = "这是一段稍长的文本。"
+TextLabel.TextColor3 = Color3.new(1, 1, 1)
+TextLabel.TextSize = 14
+TextLabel.TextWrapped = true
+TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+TextLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+-------------------------------------------------------------------------------
+-- 初始化
+local Mouse
+
+local selectedColor = Color3.new(0.321569, 0.333333, 1)
+local deselectedColor = Color3.new(0.8, 0.8, 0.8)
+--- 使元素按降序排列
+local layoutOrderNum = 999999999
+--- GUI 是否正在关闭
+local mainClosing = false
+--- GUI 是否已关闭 (默认为 false)
+local closed = false
+--- 侧边栏是否正在关闭
+local sideClosing = false
+--- 侧边栏是否已关闭 (默认为 true，但在选择远程事件时会自动打开)
+local sideClosed = false
+--- 代码框是否最大化 (默认为 false)
+local maximized = false
+--- 要读取的事件日志
+local logs = {}
+--- 当前选择的事件.Log (默认为 nil)
+local selected = nil
+--- 黑名单 (可以是字符串名称或远程实例)
+local blacklist = {}
+--- 阻止列表 (可以是字符串名称或远程实例)
+local blocklist = {}
+--- 是否添加 getNil 函数
+local getNil = false
+--- 已连接的远程事件 (及原始函数) 数组
+local connectedRemotes = {}
+--- True = hookfunction, false = namecall
+local toggle = false
+local originalnamecall
+local originalindex
+--- 用于防止递归
+local prevTables = {}
+--- 保存日志 (用于删除)
+local remoteLogs = {}
+--- 用于 hookfunction
+getgenv().SIMPLESPYCONFIG_MaxRemotes = 300
+local indent = 4
+local scheduled = {}
+local schedulerconnect
+local SimpleSpy = {}
+local topstr = ""
+local bottomstr = ""
+local remotesFadeIn
+local rightFadeIn
+local codebox
+local oldIcon
+local p
+local getnilrequired = false
+
+-- 自动阻止变量
+local autoblock = false
+local history = {}
+local excluding = {}
+
+-- 函数信息变量
+local funcEnabled = true
+
+-- 远程钩子/连接 API 变量
+local remoteSignals = {}
+
+-- 鼠标是否在 GUI 内
+local mouseInGui = false
+
+-- 用于在关闭时断开连接的 RBXScriptConnections 数组
+local connections = {}
+local logcheckcaller = false
+local hookmetamethodtoggle = true
+
+local methodtypes = {
+    ["fireserver"] = true,
+    ["invokeserver"] = true
+}
+
+local getinfolevel = 3
+
+if identifyexecutor then
+    local _, version = identifyexecutor()
+    if (version and version:sub(1, 2) == 'v3') then
+        getinfolevel = 2
+    end
+end
+
+if makefolder and isfolder then
+    if not isfolder("SimpleSpy") then
+        makefolder("SimpleSpy")
+    end
+    if not isfolder("SimpleSpy//Assets") then
+        makefolder("SimpleSpy//Assets")
+    end
+end
+
+--- 将参数转换为字符串并生成调用指定方法的代码，建议与 ValueToString 一起使用 (方法必须是字符串，例如 `game:FindService("ReplicatedStorage").Remote:FireServer`)
+--- @param method string
+--- @param args any[]
+--- @return string
+function SimpleSpy:ArgsToString(method, args)
+    assert(typeof(method) == "string", "应为字符串，得到 " .. typeof(method))
+    assert(typeof(args) == "table", "应为表，得到 " .. typeof(args))
+    return v2v({args = args}) .. "\n\n" .. method .. "(unpack(args))"
+end
+
+--- 将值转换为变量，使用指定的索引作为变量名 (如果为 nil/无效，则将自动分配名称)
+--- @param t any[]
+--- @return string
+function SimpleSpy:TableToVars(t)
+    assert(typeof(t) == "table", "应为表，得到 " .. typeof(t))
+    return v2v(t)
+end
+
+--- 将值转换为具有指定 `variablename` 的变量 (如果为 nil/无效，则将自动分配名称)
+--- @param value any
+--- @return string
+function SimpleSpy:ValueToVar(value, variablename)
+    assert(variablename == nil or typeof(variablename) == "string", "应为字符串，得到 " .. typeof(variablename))
+    if not variablename then
+        variablename = 1
+    end
+    return v2v({[variablename] = value})
+end
+
+--- 将任何值转换为字符串，无法保留函数内容
+--- @param value any
+--- @return string
+function SimpleSpy:ValueToString(value)
+    return v2s(value)
+end
+
+--- 获取指定远程事件被触发时的 ScriptSignal
+--- @param remote Instance
+function SimpleSpy:GetRemoteFiredSignal(remote)
+    assert(typeof(remote) == "Instance", "应为实例，得到 " .. typeof(remote))
+    if not remoteSignals[remote] then
+        remoteSignals[remote] = newSignal()
+    end
+    return remoteSignals[remote]
+end
+
+--- 阻止指定的远程实例/字符串
+--- @param remote any
+function SimpleSpy:BlockRemote(remote)
+    assert(typeof(remote) == "Instance" or typeof(remote) == "string", "应为实例 | 字符串，得到 " .. typeof(remote))
+    blocklist[remote] = true
+end
+
+--- 从日志中排除指定的远程事件 (实例/字符串)
+--- @param remote any
+function SimpleSpy:ExcludeRemote(remote)
+    assert(typeof(remote) == "Instance" or typeof(remote) == "string", "应为实例 | 字符串，得到 " .. typeof(remote))
+    blacklist[remote] = true
+end
+
+--- 创建一个可以连接和触发的新 ScriptSignal
+--- @return table
+function newSignal()
+    local connected = {}
+    return {
+        Connect = function(self, f)
+            assert(connected, "信号已关闭")
+            connected[tostring(f)] = f
+            return setmetatable({
+                Connected = true,
+                Disconnect = function(self)
+                    if not connected then
+                        warn("信号已关闭")
+                    end
+                    self.Connected = false
+                    connected[tostring(f)] = nil
+                end
+            },
+            {
+                __index = function(self, i)
+                    if i == "Connected" then
+                        return not not connected[tostring(f)]
+                    end
+                end
+            })
+        end,
+        Wait = function(self)
+            local thread = coroutine.running()
+            local connection
+            connection = self:Connect(function()
+                connection:Disconnect()
+                if coroutine.status(thread) == "suspended" then
+                    coroutine.resume(thread)
+                end
+            end)
+            coroutine.yield()
+        end,
+        Fire = function(self, ...)
+            for _, f in next, connected do
+                coroutine.wrap(f)(...)
+            end
+        end
+    }
+end
+
+--- 防止远程垃圾信息导致卡顿 (在超过 `getgenv().SIMPLESPYCONFIG_MaxRemotes` 或 500 个远程事件后清除日志)
+function clean()
+    local max = getgenv().SIMPLESPYCONFIG_MaxRemotes
+    if not typeof(max) == "number" and math.floor(max) ~= max then
+        max = 500
+    end
+    if #remoteLogs > max then
+        for i = 100, #remoteLogs do
+            local v = remoteLogs[i]
+            if typeof(v[1]) == "RBXScriptConnection" then
+                v[1]:Disconnect()
+            end
+            if typeof(v[2]) == "Instance" then
+                v[2]:Destroy()
+            end
+        end
+        local newLogs = {}
+        for i = 1, 100 do
+            table.insert(newLogs, remoteLogs[i])
+        end
+        remoteLogs = newLogs
+    end
+end
+
+--- 缩放工具提示以适应包含的文本
+function scaleToolTip()
+    local size = TextService:GetTextSize(TextLabel.Text, TextLabel.TextSize, TextLabel.Font, Vector2.new(196, math.huge))
+    TextLabel.Size = UDim2.new(0, size.X, 0, size.Y)
+    ToolTip.Size = UDim2.new(0, size.X + 4, 0, size.Y + 4)
+end
+
+--- 当切换按钮 (SimpleSpy 徽标) 悬停时执行
+function onToggleButtonHover()
+    if not toggle then
+        TweenService:Create(Simple, TweenInfo.new(0.5), {TextColor3 = Color3.fromRGB(252, 51, 51)}):Play()
+    else
+        TweenService:Create(Simple, TweenInfo.new(0.5), {TextColor3 = Color3.fromRGB(68, 206, 91)}):Play()
+    end
+end
+
+--- 当切换按钮取消悬停时执行
+function onToggleButtonUnhover()
+    TweenService:Create(Simple, TweenInfo.new(0.5), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+end
+
+--- 当 X 按钮悬停时执行
+function onXButtonHover()
+    TweenService:Create(CloseButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 60, 60)}):Play()
+end
+
+--- 当 X 按钮取消悬停时执行
+function onXButtonUnhover()
+    TweenService:Create(CloseButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(37, 36, 38)}):Play()
+end
+
+--- 切换远程间谍方法 (当按钮点击时)
+function onToggleButtonClick()
+    if toggle then
+        TweenService:Create(Simple, TweenInfo.new(0.5), {TextColor3 = Color3.fromRGB(252, 51, 51)}):Play()
+    else
+        TweenService:Create(Simple, TweenInfo.new(0.5), {TextColor3 = Color3.fromRGB(68, 206, 91)}):Play()
+    end
+    toggleSpyMethod()
+end
+
+--- 重新连接 bringBackOnResize (如果当前视口发生变化) 并初始连接它
+function connectResize()
+    local lastCam = workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(bringBackOnResize)
+    workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+        lastCam:Disconnect()
+        if workspace.CurrentCamera then
+            if typelastCam == 'Connection' then
+                lastCam:Disconnect()
+            end
+            lastCam = workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(bringBackOnResize)
+        end
+    end)
+end
+
+--- 如果 GUI 移出屏幕外则将其带回 (连接到相机视口变化)
+function bringBackOnResize()
+    validateSize()
+    if sideClosed then
+        minimizeSize()
+    else
+        maximizeSize()
+    end
+    local currentX = Background.AbsolutePosition.X
+    local currentY = Background.AbsolutePosition.Y
+    local viewportSize = workspace.CurrentCamera.ViewportSize
+    if (currentX < 0) or (currentX > (viewportSize.X - (sideClosed and 131 or Background.AbsoluteSize.X))) then
+        if currentX < 0 then
+            currentX = 0
+        else
+            currentX = viewportSize.X - (sideClosed and 131 or Background.AbsoluteSize.X)
+        end
+    end
+    if (currentY < 0) or (currentY > (viewportSize.Y - (closed and 19 or Background.AbsoluteSize.Y) - 36)) then
+        if currentY < 0 then
+            currentY = 0
+        else
+            currentY = viewportSize.Y - (closed and 19 or Background.AbsoluteSize.Y) - 36
+        end
+    end
+    TweenService.Create(TweenService, Background, TweenInfo.new(0.1), {Position = UDim2.new(0, currentX, 0, currentY)}):Play()
+end
+
+--- 拖动 GUI (只要鼠标按下)
+--- @param input InputObject
+function onBarInput(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local lastPos = UserInputService.GetMouseLocation(UserInputService)
+        local mainPos = Background.AbsolutePosition
+        local offset = mainPos - lastPos
+        local currentPos = offset + lastPos
+        RunService.BindToRenderStep(RunService, "drag", 1,
+            function()
+                local newPos = UserInputService.GetMouseLocation(UserInputService)
+                if newPos ~= lastPos then
+                    local currentX = (offset + newPos).X
+                    local currentY = (offset + newPos).Y
+                    local viewportSize = workspace.CurrentCamera.ViewportSize
+                    if (currentX < 0 and currentX < currentPos.X) or (currentX > (viewportSize.X - (sideClosed and 131 or TopBar.AbsoluteSize.X)) and currentX > currentPos.X) then
+                        if currentX < 0 then
+                            currentX = 0
+                        else
+                            currentX = viewportSize.X - (sideClosed and 131 or TopBar.AbsoluteSize.X)
+                        end
+                    end
+                    if (currentY < 0 and currentY < currentPos.Y) or (currentY > (viewportSize.Y - (closed and 19 or Background.AbsoluteSize.Y) - 36) and currentY > currentPos.Y) then
+                        if currentY < 0 then
+                            currentY = 0
+                        else
+                            currentY = viewportSize.Y - (closed and 19 or Background.AbsoluteSize.Y) - 36
+                        end
+                    end
+                    currentPos = Vector2.new(currentX, currentY)
+                    lastPos = newPos
+                    TweenService.Create(TweenService, Background, TweenInfo.new(0.1), {Position = UDim2.new(0, currentPos.X, 0, currentPos.Y)}):Play()
+                end
+                -- if input.UserInputState ~= Enum.UserInputState.Begin then
+                --     RunService.UnbindFromRenderStep(RunService, "drag")
+                -- end
+            end
+        )
+        table.insert(connections, UserInputService.InputEnded:Connect(function(inputE)
+            if input == inputE then
+                RunService:UnbindFromRenderStep("drag")
+            end
+        end))
+    end
+end
+
+--- 淡出元素表 (并使它们不可见)，返回一个使它们再次可见的函数
+function fadeOut(elements)
+    local data = {}
+    for _, v in next, elements do
+        if typeof(v) == "Instance" and v:IsA("GuiObject") and v.Visible then
+            coroutine.wrap(function()
+                data[v] = {
+                    BackgroundTransparency = v.BackgroundTransparency
+                }
+                TweenService:Create(v, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+                if v:IsA("TextBox") or v:IsA("TextButton") or v:IsA("TextLabel") then
+                    data[v].TextTransparency = v.TextTransparency
+                    TweenService:Create(v, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+                elseif v:IsA("ImageButton") or v:IsA("ImageLabel") then
+                    data[v].ImageTransparency = v.ImageTransparency
+                    TweenService:Create(v, TweenInfo.new(0.5), {ImageTransparency = 1}):Play()
+                end
+                wait(0.5)
+                v.Visible = false
+                for i, x in next, data[v] do
+                    v[i] = x
+                end
+                data[v] = true
+            end)()
+        end
+    end
+    return function()
+        for i, _ in next, data do
+            coroutine.wrap(function()
+                local properties = {
+                    BackgroundTransparency = i.BackgroundTransparency
+                }
+                i.BackgroundTransparency = 1
+                TweenService:Create(i, TweenInfo.new(0.5), {BackgroundTransparency = properties.BackgroundTransparency}):Play()
+                if i:IsA("TextBox") or i:IsA("TextButton") or i:IsA("TextLabel") then
+                    properties.TextTransparency = i.TextTransparency
+                    i.TextTransparency = 1
+                    TweenService:Create(i, TweenInfo.new(0.5), {TextTransparency = properties.TextTransparency}):Play()
+                elseif i:IsA("ImageButton") or i:IsA("ImageLabel") then
+                    properties.ImageTransparency = i.ImageTransparency
+                    i.ImageTransparency = 1
+                    TweenService:Create(i, TweenInfo.new(0.5), {ImageTransparency = properties.ImageTransparency}):Play()
+                end
+                i.Visible = true
+            end)()
+        end
+    end
+end
+
+--- 展开和最小化 GUI (closed 是切换布尔值)
+function toggleMinimize(override)
+    if mainClosing and not override or maximized then
+        return
+    end
+    mainClosing = true
+    closed = not closed
+    if closed then
+        if not sideClosed then
+            toggleSideTray(true)
+        end
+        LeftPanel.Visible = true
+        TweenService:Create(LeftPanel, TweenInfo.new(0.5), {Size = UDim2.new(0, 131, 0, 0)}):Play()
+        wait(0.5)
+        remotesFadeIn = fadeOut(LeftPanel:GetDescendants())
+        wait(0.5)
+    else
+        TweenService:Create(LeftPanel, TweenInfo.new(0.5), {Size = UDim2.new(0, 131, 0, 249)}):Play()
+        wait(0.5)
+        if remotesFadeIn then
+            remotesFadeIn()
+            remotesFadeIn = nil
+        end
+        bringBackOnResize()
+    end
+    mainClosing = false
+end
+
+--- 展开和最小化侧边栏 (sideClosed 是切换布尔值)
+function toggleSideTray(override)
+    if sideClosing and not override or maximized then
+        return
+    end
+    sideClosing = true
+    sideClosed = not sideClosed
+    if sideClosed then
+        rightFadeIn = fadeOut(RightPanel:GetDescendants())
+        wait(0.5)
+        minimizeSize(0.5)
+        wait(0.5)
+        RightPanel.Visible = false
+    else
+        if closed then
+            toggleMinimize(true)
+        end
+        RightPanel.Visible = true
+        maximizeSize(0.5)
+        wait(0.5)
+        if rightFadeIn then
+            rightFadeIn()
+        end
+        bringBackOnResize()
+    end
+    sideClosing = false
+end
+
+--- 展开代码框以适应屏幕，以便更方便地查看
+function toggleMaximize()
+    if not sideClosed and not maximized then
+        maximized = true
+        local disable = Instance.new("TextButton")
+        local prevSize = UDim2.new(0, CodeBox.AbsoluteSize.X, 0, CodeBox.AbsoluteSize.Y)
+        local prevPos = UDim2.new(0,CodeBox.AbsolutePosition.X, 0, CodeBox.AbsolutePosition.Y)
+        disable.Size = UDim2.new(1, 0, 1, 0)
+        disable.BackgroundColor3 = Color3.new()
+        disable.BorderSizePixel = 0
+        disable.Text = 0
+        disable.ZIndex = 3
+        disable.BackgroundTransparency = 1
+        disable.AutoButtonColor = false
+        CodeBox.ZIndex = 4
+        CodeBox.Position = prevPos
+        CodeBox.Size = prevSize
+        TweenService:Create(CodeBox, TweenInfo.new(0.5), {Size = UDim2.new(0.5, 0, 0.5, 0), Position = UDim2.new(0.25, 0, 0.25, 0)}):Play()
+        TweenService:Create(disable, TweenInfo.new(0.5), {BackgroundTransparency = 0.5}):Play()
+        disable.MouseButton1Click:Connect(function()
+            if UserInputService:GetMouseLocation().Y + 36 >= CodeBox.AbsolutePosition.Y and UserInputService:GetMouseLocation().Y + 36 <= CodeBox.AbsolutePosition.Y + CodeBox.AbsoluteSize.Y
+                and UserInputService:GetMouseLocation().X >= CodeBox.AbsolutePosition.X and UserInputService:GetMouseLocation().X <= CodeBox.AbsolutePosition.X + CodeBox.AbsoluteSize.X then
+                return
+            end
+            TweenService:Create(CodeBox, TweenInfo.new(0.5), {Size = prevSize, Position = prevPos}):Play()
+            TweenService:Create(disable, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+            wait(0.5)
+            disable:Destroy()
+            CodeBox.Size = UDim2.new(1, 0, 0.5, 0)
+            CodeBox.Position = UDim2.new(0, 0, 0, 0)
+            CodeBox.ZIndex = 0
+            maximized = false
+        end)
+    end
+end
+
+--- 检查光标是否在调整大小范围内
+--- @param p Vector2
+function isInResizeRange(p)
+    local relativeP = p - Background.AbsolutePosition
+    local range = 5
+    if relativeP.X >= TopBar.AbsoluteSize.X - range and relativeP.Y >= Background.AbsoluteSize.Y - range
+        and relativeP.X <= TopBar.AbsoluteSize.X and relativeP.Y <= Background.AbsoluteSize.Y then
+        return true, 'B'
+    elseif relativeP.X >= TopBar.AbsoluteSize.X - range and relativeP.X <= Background.AbsoluteSize.X then
+        return true, 'X'
+    elseif relativeP.Y >= Background.AbsoluteSize.Y - range and relativeP.Y <= Background.AbsoluteSize.Y then
+        return true, 'Y'
+    end
+    return false
+end
+
+--- 检查光标是否在拖动范围内
+--- @param p Vector2
+function isInDragRange(p)
+    local relativeP = p - Background.AbsolutePosition
+    if relativeP.X <= TopBar.AbsoluteSize.X - CloseButton.AbsoluteSize.X * 3 and relativeP.X >= 0
+        and relativeP.Y <= TopBar.AbsoluteSize.Y and relativeP.Y >= 0 then
+        return true
+    end
+    return false
+end
+
+--- 当鼠标进入 SimpleSpy 时调用
+function mouseEntered()
+    local customCursor = Instance.new("ImageLabel")
+    customCursor.Size = UDim2.fromOffset(200, 200)
+    customCursor.ZIndex = 1e5
+    customCursor.BackgroundTransparency = 1
+    customCursor.Image = ""
+    customCursor.Parent = SimpleSpy3
+    UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+    RunService:BindToRender
